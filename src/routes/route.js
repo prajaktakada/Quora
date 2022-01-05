@@ -7,6 +7,7 @@ const userController=require('../controllers/userController')
 const questionController=require('../controllers/questionController')
 const Middleware=require("../middleware/Authentication")
 const answerController=require("../controllers/answerController")
+//
 
 
 //user
@@ -21,6 +22,7 @@ router.get('/questions',questionController.getquestions)
 router.get('/questions/:questionId',questionController.getQuestionById)
 router.put('/questions/:questionId',Middleware.Auth,questionController.updatequestion)
 router.delete('/questions/:questionId',Middleware.Auth,questionController.deleteQuestion)
+//
 
 //answer
 router.post('/answer',Middleware.Auth,answerController.createanswer)

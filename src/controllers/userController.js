@@ -91,6 +91,7 @@ const loginUser = async function (req, res) {
         if (!validator.isValidRequestBody(req.body)) {
             return res.status(400).send({ status: false, msg: "provide login credentials" })
         };
+        
         let { email, password } = req.body
         if (!validator.isValid(email)) {
             return res.status(401).send({ status: false, msg: "Email is required" })

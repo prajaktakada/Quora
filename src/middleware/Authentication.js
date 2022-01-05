@@ -4,7 +4,7 @@ const Auth = async function (req, res, next) {
     try {
 
    const authHeader= req.headers['authorization']
-   console.log(authHeader)
+   //console.log(authHeader)
    const bearerToken=authHeader.split(' ')
    const token=bearerToken[1]
         if (!token) {

@@ -72,8 +72,9 @@ const getanswerById = async (req, res) => {
 
        const questionIdFound = await questionModel.findOne({ _id: questionId, isDeleted: false })
        if (!questionIdFound) {
-      return res.status(404).send({ status: false, message: `question not found with given questionId` })
+      return res.status(404).send({ status: false, message: `Answer is not found with given questionId` })
       }
+
 
         const answer = await answerModel.find({questionId:questionId});
 
@@ -81,7 +82,22 @@ const getanswerById = async (req, res) => {
             return res.status(404).send({ status: false, message: `answer does not exit` })
         }
 
-        return res.status(200).send({ status: true, message: 'Success', data: answer })
+        // let newdata={
+        //     //name: collegeDetail.name, 
+        //     description:questionIdFound.description,
+        //     tag:questionIdFound.tag,
+        //     askedBy:questionIdFound.askedBy,
+        //     isDeleted:questionIdFound.isDeleted,
+        //     answer:answer
+        
+        
+        // }
+
+        // return res.status(200).send({ status: true, message: 'Success', data: newdata })
+
+
+
+         return res.status(200).send({ status: true, message: 'Success', data: answer })
 
     } catch (err) {
         return res.status(500).send({ status: false, message: err.message });

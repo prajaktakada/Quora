@@ -70,11 +70,11 @@ const getquestions = async function (req, res) {
         let querybody = req.query;
 
 
-        if (!validator.isValidRequestBody(querybody)) {
-            let NDeleted = await questionModel.find(filterQuery) //.sort({ price: -1 })
-            res.status(200).send({ status: true, message: 'Not Deleted questions are', data: NDeleted })
-            return
-        };
+        // if (!validator.isValidRequestBody(querybody)) {
+        //     let NDeleted = await questionModel.find(filterQuery) //.sort({ price: -1 })
+        //     res.status(200).send({ status: true, message: 'Not Deleted questions are', data: NDeleted })
+        //     return
+        // };
 
         var { tag, sort } = querybody
 
@@ -88,18 +88,25 @@ const getquestions = async function (req, res) {
             if (sort == "descending") {
                 sort = -1
             }
-            if (sort == "increasing") {
+            if (sort == "ascending") {
                 sort = 1
             }
         }
 
-        let data = await questionModel.find(filterQuery).sort({ "createdAt": sort })
+        var filterData = await questionModel.find(filterQuery).sort({ "createdAt": sort }).lean()
 
-        if (data == 0) {
-            return res.status(400).send({ status: false, msg: "no questions found " })
+        for (let i = 0; i < filterData.length; i++) {
+            console.log(filterData[i])
+            let answer = await answerModel.find({ questionId: filterData[i]._id }).select({ text: 1, answeredBy: 1})
+            console.log(answer)
+            filterData[i].answers = answer
         }
 
-        return res.status(200).send({ status: true, msg: "questions", data: data })
+        // if (filterData == 0) {
+        //     return res.status(400).send({ status: false, msg: "no questions found " })
+        // }
+
+ return res.status(200).send({ status: true, msg: "questions", Details:filterData })
     }
 
     catch (err) {
@@ -127,10 +134,23 @@ const getQuestionById = async (req, res) => {
         }
 
 //question with answer
-        let answer = await answerModel.find({ questionId: questionId }).select({ text: 1, answeredBy: 1 })
+       let answer = await answerModel.find({ questionId: questionId }).select({ text: 1, answeredBy: 1 })
         question.answers=answer;
 
-        return res.status(200).send({ status: true, message: 'Success', data: question })
+        var newdata={
+            //name: collegeDetail.name, 
+            description:question.description,
+            tag:question.tag,
+            askedBy:question.askedBy,
+            isDeleted:question.isDeleted,
+            answer:answer
+        
+        
+        }
+
+        return res.status(200).send({ status: true, message: 'Success', data: newdata })
+
+        //return res.status(200).send({ status: true, message: 'Success', data: question })
 
     } catch (err) {
         return res.status(500).send({ status: false, message: err.message });
