@@ -6,7 +6,7 @@ const questionSchema = new mongoose.Schema({
       tag: [{ type: [String],trim: true}],
       askedBy:{type: mongoose.Types.ObjectId,refs:'user'},
       deletedAt:{type:Date,default:null},
-      isDeleted:{type: Boolean,default: false}
+      isDeleted:{type: Boolean,default: false} //
         
 }, { timestamps: true })
 

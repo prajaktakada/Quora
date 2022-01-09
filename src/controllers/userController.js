@@ -16,7 +16,7 @@ const createUser = async function (req, res) {
 
         //extract params
 
-        let { fname, lname,phone,email,password} = requestBody;
+        let { fname, lname,phone,email,password,creditScore} = requestBody;
 
         //validation starts
         if (!validator.isValid(fname)) {
@@ -70,7 +70,13 @@ const createUser = async function (req, res) {
             return
         };
 
-        const userDetails = {fname, lname,phone,email,password};
+
+        // if (!validator.isValid(creditScore)) {
+        //     res.status(400).send({ status: false, message: `creditScore is required` })
+        //     return
+        // };
+
+        const userDetails = {fname, lname,phone,email,password,creditScore};
         const salt = await bcrypt.genSalt(10);
         userDetails.password = await bcrypt.hash(userDetails.password, salt)
 

@@ -13,7 +13,7 @@ const Auth = async function (req, res, next) {
             let decodedtoken = jwt.verify(token, 'pkproject6')
             if (decodedtoken) {
                 req.user = decodedtoken.userId
-                // console.log(decodedtoken)
+                
                 next()
             }
         }

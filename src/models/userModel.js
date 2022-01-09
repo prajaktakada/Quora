@@ -6,9 +6,8 @@ const userSchema = new mongoose.Schema({
     lname: {type: String,required: true,trim:true},
     email: { type: String,required: true,unique: true},//validemail
     phone:{type:String,trim: true,unique:true},// valid Indian mobile number
-    password:{type: String,required: true}
-  
-
+    password:{type: String,required: true},
+    creditScore:{type:Number,required:true,default:500} 
 
 }, { timestamps: true })
 

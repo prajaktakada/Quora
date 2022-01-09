@@ -22,13 +22,12 @@ router.get('/questions',questionController.getquestions)
 router.get('/questions/:questionId',questionController.getQuestionById)
 router.put('/questions/:questionId',Middleware.Auth,questionController.updatequestion)
 router.delete('/questions/:questionId',Middleware.Auth,questionController.deleteQuestion)
-//
 
 //answer
 router.post('/answer',Middleware.Auth,answerController.createanswer)
 router.get('/questions/:questionId/answer',answerController.getanswerById)
 router.put('/answer/:answerId',Middleware.Auth,answerController.updateAnswer)
-router.delete('/answer',Middleware.Auth,answerController.deleteAnswer)
+router.delete('/answer/:answerId',Middleware.Auth,answerController.deleteAnswer)
 
 
 module.exports = router;
