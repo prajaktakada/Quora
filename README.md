@@ -134,7 +134,7 @@
 }
 ```
 
-Note: 
+Note:.
 Refer the following links to explore brypt and form-data
 [Bcrypt](https://www.npmjs.com/package/bcrypt)
 

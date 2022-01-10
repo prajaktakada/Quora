@@ -28,6 +28,6 @@ router.post('/answer',Middleware.Auth,answerController.createanswer)
 router.get('/questions/:questionId/answer',answerController.getanswerById)
 router.put('/answer/:answerId',Middleware.Auth,answerController.updateAnswer)
 router.delete('/answer/:answerId',Middleware.Auth,answerController.deleteAnswer)
-
+//
 
 module.exports = router;

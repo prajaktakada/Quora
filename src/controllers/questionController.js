@@ -1,19 +1,19 @@
 //questionController
-const mongoose = require("mongoose")
+
 const userModel = require('../models/userModel')
 const validator = require("../util/validator")
 const questionModel = require('../models/questionModel')
 const answerModel = require('../models/answerModel')
-const { update } = require("../models/questionModel")
+
 
 
 
 //POST /question
 const createquestion = async function (req, res) {
     try {
-        const requestBody = req.body;
 
-        TokenDetail = req.user
+        const requestBody = req.body;
+        const TokenDetail = req.user
 
         if (!(TokenDetail === requestBody.userId)) {
             return res.status(401).send({ status: false, message: "userId  and in token is not same" })
@@ -25,49 +25,39 @@ const createquestion = async function (req, res) {
         }
 
         //extract params
-
         let { description, tag, askedBy } = requestBody
 
         //validation starts
-
         if (!validator.isValid(description)) {
-            res.status(400).send({ status: false, message: `description is required` })
-            return
+            return res.status(400).send({ status: false, message: `description is required` })    
         };
 
         if (!validator.isValid(tag)) {
-            res.status(400).send({ status: false, message: `tag is required` })
-            return
+            return res.status(400).send({ status: false, message: `tag is required` })    
         };
-
 
         //validation ends
-
         askedBy = requestBody.userId
-        if (!(validator.isValidObjectId(requestBody.userId))) {
-            return res.status(400).send({ status: false, message: 'Please provide valid userId' })
+        if (!validator.isValidObjectId(requestBody.userId )) {
+            res.status(400).send({ status: false, message: `Please enter correct UserId` })
+            return
         }
-        if (!validator.isValid(requestBody.userId)) {
-            return res.status(401).send({ status: false, msg: "userId is required" })
-        };
+        let UserFound = await userModel.findById(requestBody.userId )
+        if (!UserFound) {
+            res.status(400).send({ status: false, message: `No Userfound with given UserId` })
+            return
+        }
 
+        if((UserFound.creditScore<=0)||(UserFound.creditScore<100))
+        {
+            return res.status(400).send({status:false,message:`You dont have enough credit. Currently you have ${UserFound.creditScore} credit points.`})
+        }
 
         const questionData = { description, tag, askedBy: askedBy }
         const questions = await questionModel.create(questionData);
 
-        //
-
-        if (questions) {
-
-            let deductCreditScore = await userModel.findById({ _id: requestBody.userId })
-            //console.log(deductCreditScore)
-            if ((deductCreditScore.creditScore <= 0 || deductCreditScore.creditScore < 100)) {
-                return res.status(400).send({ status: false, msg: `you canot post question because you you have ${deductCreditScore.creditScore} credit points.` })
-            }
-            scrore = deductCreditScore.creditScore - 100
-            let updated = await userModel.findOneAndUpdate({ _id: deductCreditScore }, { creditScore: scrore })
-            console.log(updated.creditScore)
-        }
+        UserFound.creditScore=UserFound.creditScore-100;
+        await UserFound.save();
         return res.status(201).send(questions);
 
     } catch (err) {
@@ -83,14 +73,8 @@ module.exports.createquestion = createquestion
 //GET /questions 
 const getquestions = async function (req, res) {
     try {
-        let filterQuery = { isDeleted: false } //deletedAt:null 
+        let filterQuery = { isDeleted: false } 
         let querybody = req.query;
-
-        // if (!validator.isValidRequestBody(querybody)) {
-        //     let NDeleted = await questionModel.find(filterQuery) //.sort({ price: -1 })
-        //     res.status(200).send({ status: true, message: 'Not Deleted questions are', data: NDeleted })
-        //     return
-        // };
 
         var { tag, sort } = querybody
 
@@ -148,23 +132,19 @@ const getQuestionById = async (req, res) => {
             return res.status(404).send({ status: false, message: `question does not exit` })
         }
 
-        //question with answer                                 //deletedAt:null 
-        let answer = await answerModel.find({ questionId: questionId,isDeleted: false}).sort({createdAt:-1})//.select({ text: 1, answeredBy: 1 })
+        //question with answer                               
+        let answer = await answerModel.find({ questionId: questionId,isDeleted: false}).sort({createdAt:-1})
         question.answers = answer;
 
-        var newdata = {
-          
+        let newdata = {
+
             description: question.description,
             tag: question.tag,
             askedBy: question.askedBy,
             isDeleted: question.isDeleted,
             answer: answer
-
         }
-
-        return res.status(200).send({ status: true, message: 'Success', data: newdata })
-
-        //return res.status(200).send({ status: true, message: 'Success', data: question })
+        return res.status(200).send({ status: true, message: 'Success', data:newdata})
 
     } catch (err) {
         return res.status(500).send({ status: false, message: err.message });
@@ -183,33 +163,28 @@ const updatequestion = async (req, res) => {
         const requestBody = req.body;
         TokenDetail = req.user
 
+        if (!validator.isValidRequestBody(requestBody)) {
+            return res.status(400).send({ status: false, message: 'please provide request body' })
+        }
+
         if (!validator.isValidObjectId(questionId)) {
             return res.status(400).send({ status: false, message: `${questionId} is not a valid questionId` })
         }
-
 
         const questionFound = await questionModel.findOne({ _id: questionId })
         if (!questionFound) {
             return res.status(404).send({ status: false, message: `question Details not found with given qutionid` })
         }
 
-
         if (!(TokenDetail == questionFound.askedBy)) {
             return res.status(401).send({ status: false, message: "userId in url param and in token is not same" })
         }
-
-
-        if (!validator.isValidRequestBody(requestBody)) {
-            return res.status(400).send({ status: false, message: 'please provide request body' })
-        }
-
 
         let { tag, description } = requestBody
 
         if (!validator.isValid(tag)) {
             return res.status(400).send({ status: false, message: `tag not provide` })
         }
-
 
         if (!validator.isValid(requestBody.text)) {
             return res.status(400).send({ status: false, message: `description not provide` })
@@ -218,9 +193,7 @@ const updatequestion = async (req, res) => {
         //Validation Ends
 
         description = requestBody.text
-
         const UpdateData = { description: requestBody.text, tag }
-        UpdateData.updatedAt = new Date()
         const upatedUser = await questionModel.findOneAndUpdate({ _id: questionId }, UpdateData, { new: true })
         res.status(200).send({ status: true, message: 'question updated successfully', data: upatedUser });
     } catch (err) {
@@ -239,7 +212,7 @@ const deleteQuestion = async (req, res) => {
         TokenDetail = req.user
 
         const questionFound = await questionModel.findOne({ _id: questionId })
-        //console.log(questionFound.askedBy)
+      
         if (!questionFound) {
             return res.status(404).send({ status: false, message: `question Details not found with` })
         }
@@ -248,14 +221,12 @@ const deleteQuestion = async (req, res) => {
             return res.status(400).send({ status: false, message: `${questionId} is not a valid questionId` })
         }
 
-        // console.log(TokenDetail)
-        // console.log(questionFound.askedBy)
         if (!(TokenDetail == questionFound.askedBy)) {
             return res.status(401).send({ status: false, message: "userId  and in token is not same" })
         }
 
 
-        if (questionFound.isDeleted == true) { //&& questionFound.deletedAt == null 
+        if (questionFound.isDeleted == true) { 
             return res.status(404).send({ status: false, message: "This questionFound already deleted" });
         }
         const data = await questionModel.findOneAndUpdate({ _id: questionId },{ isDeleted: true, deletedAt: new Date()},{ new: true })

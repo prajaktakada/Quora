@@ -10,25 +10,29 @@ const answerModel = require('../models/answerModel')
 const createanswer = async function (req, res) {
     try {
         const requestBody = req.body;
-        TokenDetail = req.user
+        let userId=req.body.userId
+        let TokenDetail = req.user
 
         if (!(TokenDetail === requestBody.userId)) {
-          return res.status(401).send({ status: false, message: "userId  and in token is not same" })
+            return res.status(401).send({ status: false, message: "userId  and in token is not same" })
         }
 
         if (!validator.isValidRequestBody(requestBody)) {
             res.status(400).send({ status: false, message: 'Please provide requestBody details' })
             return
         }
-//
-let questionfind = await questionModel.findOne({_id:requestBody.questionId})
-//console.log(questionfind)
-if(questionfind.askedBy == requestBody.userId){
-    return res.status(400).send({status:false,msg:"you can not wirte question as well as answer"})
-}
-//
-        //extract params
 
+        let questionfind = await questionModel.findOne({ _id: requestBody.questionId })
+        if (questionfind.askedBy == requestBody.userId) {
+            return res.status(400).send({ status: false, msg: "you can not wirte question as well as answer" })
+        }
+
+        const UserFound = await userModel.findById({ _id: userId  })
+        if (!UserFound) {
+            return res.status(404).send({ status: false, message: `User Details not found with given userId` })
+        }
+
+        //extract params
         let { answeredBy, text, questionId } = requestBody
 
         //validation starts
@@ -51,22 +55,11 @@ if(questionfind.askedBy == requestBody.userId){
             return
         };
 
-        const answerData = { answeredBy:answeredBy, text, questionId }
+        const answerData = { answeredBy: answeredBy, text, questionId }
         const answer = await answerModel.create(answerData);
-
-
-//
-
-if(answer){
-
-    let deductCreditScore = await userModel.findById({_id:requestBody.userId})  
-    scrore = deductCreditScore.creditScore+200
-    let update = await userModel.findOneAndUpdate({_id:deductCreditScore},{creditScore:scrore})
-    console.log(update)
-    
-    }
-   // 
-      return res.status(201).send(answer);
+        UserFound.creditScore=UserFound.creditScore+200;
+        await UserFound.save();
+        return res.status(201).send(answer);
 
     } catch (err) {
         res.status(500).send({ status: false, message: err.message });
@@ -87,36 +80,20 @@ const getanswerById = async (req, res) => {
             return res.status(400).send({ status: false, message: `${questionId} is not a valid id` })
         }
 
-        const questionIdFound = await questionModel.findOne({ _id:questionId,isDeleted: false }) //deletedAt:null 
+        const questionIdFound = await questionModel.findOne({ _id: questionId, isDeleted: false })  
         if (!questionIdFound) {
             return res.status(404).send({ status: false, message: `Answer is not found with given questionId` })
         }
 
 
-        const answer = await answerModel.find({ questionId: questionId,isDeleted:false}).sort({createdAt:-1});
+        const answer = await answerModel.find({ questionId: questionId, isDeleted: false }).sort({ createdAt: -1 });
 
         if (!answer) {
             return res.status(404).send({ status: false, message: `answer does not exit` })
         }
-       
-        // if (!answer.isDeleted == false) {  //&& answer.deletedAt == null 
-        //     return res.status(400).send({ status: false, message: "Answer is deleted" })
-        // }
 
-        let newdata = {
-            // //name: collegeDetail.name, 
-            // description:questionIdFound.description,
-            // tag:questionIdFound.tag,
-            // askedBy:questionIdFound.askedBy,
-            // isDeleted:questionIdFound.isDeleted,
-            answer: answer
-
-
-        }
-
+        let newdata = { answer: answer }
         return res.status(200).send({ status: true, message: 'Success', data: newdata })
-
-        //return res.status(200).send({ status: true, message: 'Success', data: answer })
 
     } catch (err) {
         return res.status(500).send({ status: false, message: err.message });
@@ -135,9 +112,7 @@ const updateAnswer = async (req, res) => {
         requestbody = req.body;
         TokenDetail = req.user
         answerId = req.params.answerId
-        console.log(answerId)
-
-
+        
         if (!validator.isValidRequestBody(requestbody)) {
             res.status(400).send({ status: false, message: 'Please provide userId and questionId' });
             return
@@ -148,7 +123,7 @@ const updateAnswer = async (req, res) => {
         }
 
         const answerFound = await answerModel.findOne({ _id: answerId })
-        //console.log(answerFound)
+        
         if (answerFound.isDeleted == true) { //&& answerFound.deletedAt == null 
             return res.status(400).send({ status: false, message: "Answer not exists,it is deleted" })
         }
@@ -157,11 +132,8 @@ const updateAnswer = async (req, res) => {
             return res.status(404).send({ status: false, message: `answer Details not found with given UserId` })
         }
 
-        //console.log(TokenDetail)
-        //console.log(answerFound.answeredBy)
-
         if (!(TokenDetail == answerFound.answeredBy)) {
-         return res.status(401).send({ status: false, message: "userId in url param and in token is not same" })
+            return res.status(401).send({ status: false, message: "userId in url param and in token is not same" })
         }
 
         let { text } = requestbody
@@ -170,7 +142,6 @@ const updateAnswer = async (req, res) => {
             res.status(400).send({ status: false, message: `text is required` })
             return
         };
-
 
         const questionData = { text }
 
@@ -192,11 +163,11 @@ module.exports.updateAnswer = updateAnswer
 const deleteAnswer = async (req, res) => {
     try {
 
-        let answerId=req.params.answerId;
+        let answerId = req.params.answerId;
         let requestbody = req.body;
         let TokenDetail = req.user;
 
-        const AnswerFound = await answerModel.findOne({ _id:answerId })
+        const AnswerFound = await answerModel.findOne({ _id: answerId })
         if (!AnswerFound) {
             return res.status(404).send({ status: false, message: `  No answer found` })
         }
@@ -204,7 +175,7 @@ const deleteAnswer = async (req, res) => {
             return res.status(400).send({ status: false, message: "Answer not exists" })
         }
 
-        
+
         if (!validator.isValidRequestBody(requestbody)) {
             res.status(400).send({ status: false, message: 'please provide valid requestbody' });
             return
@@ -217,11 +188,9 @@ const deleteAnswer = async (req, res) => {
 
         if (!validator.isValid(questionId)) {
             return res.status(400).send({ status: false, message: `questionId is required` })
-
         };
 
-
-        const UserFound = await userModel.findOne({ _id:requestbody.userId })
+        const UserFound = await userModel.findOne({ _id: requestbody.userId })
         if (!UserFound) {
             return res.status(404).send({ status: false, message: ` No User found` })
         }
@@ -235,11 +204,10 @@ const deleteAnswer = async (req, res) => {
         if (!(TokenDetail == requestbody.userId)) {
             return res.status(400).send({ status: false, message: "Userid are not mathched" })
         }
-        let data = await answerModel.findOneAndUpdate({ answeredBy: userId },{ isDeleted: true, deletedAt: new Date()},{ new: true })//checkdb and refresh it set
-        //console.log(data)
-        
-            return res.status(200).send({ status: true, message: `delete successfully`, data: data })
-       
+        let data = await answerModel.findOneAndUpdate({ answeredBy: userId }, { isDeleted: true, deletedAt: new Date() }, { new: true })
+
+        return res.status(200).send({ status: true, message: `delete successfully`, data: data })
+
     } catch (err) {
         return res.status(500).send({ status: false, message: err.message })
     }
